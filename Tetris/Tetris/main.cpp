@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <conio.h>
 #include <Windows.h>
 
 using namespace std;
@@ -38,6 +39,7 @@ class Block {
 	}
 };
 
+//tick 시간마다 그리기
 class Board {
 	public: Block** lines;
 
@@ -60,20 +62,17 @@ class Board {
 	}
 
 	public: void Draw() {
-		for (int i=0 ; i<row ; ++i) 
-			for (int j=0 ; j<col ; ++j)
-				lines[i][j].Draw();
+		static time_t cur; time(&cur);
+		while (1) { 
+			for (int i=0 ; i<row ; ++i) 
+				for (int j=0 ; j<col ; ++j) 
+					lines[i][j].Draw();
+		}
 	}
 
 	public: bool CheckBlock(int row, int col) {
 		if (lines[row][col].stat != Block::EMPTY) return false;
 		return true;
-	}
-
-	void ddd() {
-		thread t1([]() {
-			while(1) cout << "helloworld" << endl;
-		});
 	}
 };
 
@@ -87,43 +86,60 @@ class Tetromino {
 
 	public: void Rotate() {}
 	public: void Move() {}
-	public: void Down() {}
+	public: void Down() { pos.x++; }
+	public: void Left() { pos.y--; }
+	public: void Right() { pos.y++; }
 
-	public: void Draw() {
+	public: void Mark() {
 		for (int i=0 ; i<4 ; ++i) {
 			for (int j=0 ; j<4 ; ++j) {
-				gotoXY(pos.x + i, pos.y + j);
-				if (targetBoard->lines[pos.x + i][pos.y + j].stat == Block::BLOCKED || this->shape[i][j].stat == Block::BLOCKED)
-					cout << "■";
-				else if(targetBoard->lines[pos.x + i][pos.y + j].stat == Block::FILL || this->shape[i][j].stat == Block::FILL)
-					cout << "▣";
-				else 
-					cout << "□";
+				if (targetBoard->lines[pos.x + i][pos.y + j].stat == Block::EMPTY) {
+					targetBoard->lines[pos.x + i][pos.y + j].SetBlock(shape[i][j].stat);
+				}
+				else if (targetBoard->lines[pos.x + i][pos.y + j].stat == Block::FILL) {
+					targetBoard->lines[pos.x + i][pos.y + j].SetBlock(shape[i][j].stat);
+				}
 			}
 		}
 	}
 };
 
 class InputManager {
-	public: int key;
-	//스태틱 람다 -> 클래스 함수를 스레드로 쓰는 방법 두가지
+	public: int key = 'a';
+	public: Tetromino* tet;
+
+public: void Init(Tetromino* tet) { this->tet = tet; }
 	public: void GetKey() {
 		while (1) {
-
+			if (!kbhit()) continue;
+			key = getch();
+			switch (key) {
+			case 's': tet->Down(); break;
+			case 'a': tet->Left(); break;
+			case 'd': tet->Right(); break;
+			}
 		}
 	}
 };
 
+
+
 int main() {
+
 	Board board(20, 15); board.Init();
-	Tetromino iTetromino;
-	iTetromino.Init(1, 1, Tetromino::O, &board);
+	Tetromino iTetromino; iTetromino.Init(1, 1, Tetromino::O, &board);
+	InputManager input; input.Init(&iTetromino);
+
+	thread t1(&InputManager::GetKey, &input);
+	thread t2(&Board::Draw, &board);
 	
-	//thread th([]() {board.draw()});
-	//iTetromino.Draw();
-	board.ddd();
+	//메인에 while있어야 프로그램 종료안됨
+	while (1) { iTetromino.Mark(); }
+	
 	return 0;
 }
+
+
 
 void Tetromino::Init(int x, int y, Type t, Board* targetBoard) {
 	this->targetBoard = targetBoard;
