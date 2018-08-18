@@ -3,11 +3,13 @@
 #include <atomic>
 
 class InputManager {
-	public: std::atomic<int> key;
+	private: std::atomic<int> key;
+	private: bool isEmpty;
 
 	public: InputManager();
 	public: ~InputManager();
 
-	public: void GetKey();
+	public: void PushKey();
+	public: int PopKey();
 };
 

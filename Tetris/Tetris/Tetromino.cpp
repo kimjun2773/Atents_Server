@@ -4,7 +4,16 @@ Tetromino::Tetromino(){}
 Tetromino::~Tetromino(){}
 
 void Tetromino::Draw() {
-	gotoXY(pos.x, pos.y);
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			gotoXY(pos.x + i, pos.y + j);
+			switch (shape[i][j].GetStatus()) {
+			case Block::EMPTY: std::cout << "бр"; break;
+			case Block::FILL: std::cout << "в├"; break;
+			case Block::BLOCKED: std::cout << "бс"; break;
+			}
+		}
+	}
 }
 void Tetromino::Init(int x, int y, Type t) {
 	pos.x = x; pos.y = y;
